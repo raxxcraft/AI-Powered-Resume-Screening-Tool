@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ATS Screener Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #a0b1c3;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        .upload-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .upload-btn:hover {
+            background-color: #2980b9;
+        }
+        .file-display {
+            background-color: #97b9c2;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            display: inline-block;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .score-card {
+            background: linear-gradient(135deg, #4c598f 0%, #224a61 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .score-number {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .evaluation {
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .excellent { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .good { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .needs-work { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .details {
+            text-align: left;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .detail-row {
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .skill-tag {
+            background-color: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Junior ATS Screening Tool</h1>
+        
+        <div id="upload-section">
+            <input type="file" id="resume-file" accept=".pdf" style="display: none;">
+            <button class="upload-btn" onclick="document.getElementById('resume-file').click()">
+                Upload Resume (PDF)
+            </button>
+        </div>
+        
+        <div id="result-section" style="display: none;">
+            <div class="file-display" id="filename"></div>
+            
+            <div class="score-card">
+                <div class="score-number" id="score"></div>
+                <div>Match Score</div>
+            </div>
+            
+            <div class="evaluation" id="evaluation"></div>
+            
+            <div class="details">
+                <div class="detail-row">
+                    <span class="detail-label">Skills Found:</span>
+                    <span id="skill-count"></span>
+                    <div class="skills-list" id="skills-list"></div>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Skill Score:</span>
+                    <span id="skill-score"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Experience Score:</span>
+                    <span id="experience-score"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('resume-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('resume', file);
+                
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        return;
+                    }
+                    
+                    document.getElementById('upload-section').style.display = 'none';
+                    document.getElementById('filename').textContent = data.filename;
+                    document.getElementById('score').textContent = data.score + '%';
+                    document.getElementById('evaluation').textContent = data.evaluation;
+                    document.getElementById('evaluation').className = 'evaluation ' + data.status;
+                    document.getElementById('skill-count').textContent = data.skill_count;
+                    document.getElementById('skill-score').textContent = data.skill_score + '%';
+                    document.getElementById('experience-score').textContent = data.experience_score + '%';
+                    
+                    const skillsList = document.getElementById('skills-list');
+                    skillsList.innerHTML = '';
+                    data.skills.forEach(skill => {
+                        const tag = document.createElement('span');
+                        tag.className = 'skill-tag';
+                        tag.textContent = skill;
+                        skillsList.appendChild(tag);
+                    });
+                    
+                    document.getElementById('result-section').style.display = 'block';
+                })
+                .catch(error => {
+                    alert('Upload failed: ' + error.message);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
